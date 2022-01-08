@@ -74,7 +74,7 @@ const displayMovements = function (movements) { // better practice to pass data 
         </div>
   `;
 
-    containerMovements.insertAdjacentHTML('afterbegin', html)  //method to add html template to the webpage container div.movements
+    containerMovements.insertAdjacentHTML('afterbegin', html);  //method to add html template to the webpage container div.movements
     // 2 args as strings. 1st - position in which we wanna attach html https://developer.mozilla.org/en-US/docs/Web/API/Element/insertAdjacentHTML
     // 2nd arg - string containing html we wanna insert
     // beforeend - the order of elements will be inverted. Each new element would be added after the previous one. At the end of the container
@@ -84,6 +84,18 @@ const displayMovements = function (movements) { // better practice to pass data 
 };
 displayMovements(account1.movements);
 
+//creating username property inside each object
+const createUsernames = function (accs) {
+  accs.forEach(function (acc) { // creating initials without returning anything
+    acc.username = acc.owner
+      .toLocaleLowerCase()
+      .split(' ')
+      .map(name => name.at(0)) //callback f in map method always need a return value that will be in a new array
+      .join('');
+  })
+}
+createUsernames(accounts)
+console.log(accounts);
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 // LECTURES
