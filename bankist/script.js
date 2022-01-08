@@ -70,7 +70,7 @@ const displayMovements = function (movements) { // better practice to pass data 
     const html = `
         <div class="movements__row">
           <div class="movements__type movements__type--${type}">${i + 1} ${type}</div>
-          <div class="movements__value">${mov}</div>
+          <div class="movements__value">${mov}€</div>
         </div>
   `;
 
@@ -78,7 +78,6 @@ const displayMovements = function (movements) { // better practice to pass data 
     // 2 args as strings. 1st - position in which we wanna attach html https://developer.mozilla.org/en-US/docs/Web/API/Element/insertAdjacentHTML
     // 2nd arg - string containing html we wanna insert
     // beforeend - the order of elements will be inverted. Each new element would be added after the previous one. At the end of the container
-
   });
 
 };
@@ -91,6 +90,27 @@ const calcDisplayBalance = function (movements) {
 }
 calcDisplayBalance(account1.movements);
 
+// calculating total incomes, withdraws and interest from the account
+const calcDisplaySummary = function (movements) {
+  const incomes = movements.filter(mov => mov > 0)
+    .reduce((acc, mov) => acc + mov, 0);
+  labelSumIn.textContent = `${incomes}€`
+
+  const out = movements.filter(mov => mov < 0)
+    .reduce((acc, mov) => acc + mov, 0);
+  labelSumOut.textContent = `${Math.abs(out)}€`
+
+  const interest = movements.filter(mov => mov > 0)
+    .map(deposit => deposit * 1.2 / 100) // deposit * 1,2% (bank pays 1.2% of the value of each transaction)
+    .filter((int, i, arr) => { // filtering out transaction from which the interest will be less than 1€ (e.g. new rule from the bank)
+      console.log(arr);
+      return int >= 1;
+    })
+    .reduce((acc, int) => acc + int); // total interest value for all transactions
+  labelSumInterest.textContent = `${interest}€`
+}
+calcDisplaySummary(account1.movements);
+
 //creating username property inside each object
 const createUsernames = function (accs) {
   accs.forEach(function (acc) { // creating initials without returning anything
@@ -101,7 +121,7 @@ const createUsernames = function (accs) {
       .join('');
   })
 }
-createUsernames(accounts)
+createUsernames(accounts);
 
 
 
