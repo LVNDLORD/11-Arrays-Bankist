@@ -84,6 +84,13 @@ const displayMovements = function (movements) { // better practice to pass data 
 };
 displayMovements(account1.movements);
 
+// calculating balance per account
+const calcDisplayBalance = function (movements) {
+  const balance = movements.reduce((acc, mov) => acc + mov, 0);
+  labelBalance.textContent = `${balance} EUR`;
+}
+calcDisplayBalance(account1.movements);
+
 //creating username property inside each object
 const createUsernames = function (accs) {
   accs.forEach(function (acc) { // creating initials without returning anything
@@ -95,7 +102,10 @@ const createUsernames = function (accs) {
   })
 }
 createUsernames(accounts)
-console.log(accounts);
+
+
+
+
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 // LECTURES
