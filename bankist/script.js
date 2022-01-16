@@ -81,35 +81,35 @@ const displayMovements = function (movements) { // better practice to pass data 
   });
 
 };
-displayMovements(account1.movements);
+
 
 // calculating balance per account
 const calcDisplayBalance = function (movements) {
   const balance = movements.reduce((acc, mov) => acc + mov, 0);
   labelBalance.textContent = `${balance} EUR`;
-}
-calcDisplayBalance(account1.movements);
+};
 
 // calculating total incomes, withdraws and interest from the account
-const calcDisplaySummary = function (movements) {
-  const incomes = movements.filter(mov => mov > 0)
+const calcDisplaySummary = function (acc) {
+  const incomes = acc.movements.filter(mov => mov > 0)
     .reduce((acc, mov) => acc + mov, 0);
   labelSumIn.textContent = `${incomes}€`
 
-  const out = movements.filter(mov => mov < 0)
+  const out = acc.movements.filter(mov => mov < 0)
     .reduce((acc, mov) => acc + mov, 0);
   labelSumOut.textContent = `${Math.abs(out)}€`
 
-  const interest = movements.filter(mov => mov > 0)
-    .map(deposit => deposit * 1.2 / 100) // deposit * 1,2% (bank pays 1.2% of the value of each transaction)
+  const interest = acc.movements.filter(mov => mov > 0)
+    .map(deposit => deposit * acc.interestRate / 100) // deposit * 1,2% (bank pays 1.2% of the value of each transaction)
     .filter((int, i, arr) => { // filtering out transaction from which the interest will be less than 1€ (e.g. new rule from the bank)
       console.log(arr);
       return int >= 1;
     })
     .reduce((acc, int) => acc + int); // total interest value for all transactions
   labelSumInterest.textContent = `${interest}€`
-}
-calcDisplaySummary(account1.movements);
+};
+// best practice - not to overuse chaining. Can cause issues with huge arrays.
+// bad practice to chain methods that mutate the original array. Eg.splice() / reverse. Avoid mutating arrays.
 
 //creating username property inside each object
 const createUsernames = function (accs) {
@@ -120,8 +120,64 @@ const createUsernames = function (accs) {
       .map(name => name.at(0)) //callback f in map method always need a return value that will be in a new array
       .join('');
   })
-}
+};
 createUsernames(accounts);
+
+
+// Event handlers
+// default behav of HTML in submit forms is after clicking the button to reload the page. We gotta change it
+let currentAccount;
+
+btnLogin.addEventListener('click', function (event) {
+  event.preventDefault(); // prevent form from submitting
+
+  currentAccount = accounts.find(acc => acc.username === inputLoginUsername.value);
+  console.log(currentAccount);
+
+  if (currentAccount?.pin === Number(inputLoginPin.value));  //! optional chaining. Checking pin only if the current account exist
+  //display UI and welcome message
+  labelWelcome.textContent = `Welcome back, ${currentAccount.owner.split(' ')[0]}`; // splitting name and surname. From resulting array taking the first el/word in this case
+  containerApp.style.opacity = 100;
+  // clear input fields
+  inputLoginUsername.value = inputLoginPin.value = '';
+  inputLoginPin.blur(); // !! field looses it's focus
+
+  //display movements
+  displayMovements(currentAccount.movements);
+  //display balance
+  calcDisplayBalance(currentAccount.movements);
+  //display summary
+  calcDisplaySummary(currentAccount);
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
