@@ -84,9 +84,9 @@ const displayMovements = function (movements) { // better practice to pass data 
 
 
 // calculating balance per account
-const calcDisplayBalance = function (movements) {
-  const balance = movements.reduce((acc, mov) => acc + mov, 0);
-  labelBalance.textContent = `${balance} EUR`;
+const calcDisplayBalance = function (acc) {
+  acc.balance = acc.movements.reduce((acc, mov) => acc + mov, 0);
+  labelBalance.textContent = `${acc.balance} EUR`;
 };
 
 // calculating total incomes, withdraws and interest from the account
@@ -123,6 +123,15 @@ const createUsernames = function (accs) {
 };
 createUsernames(accounts);
 
+const updateUI = function (currAcc) {
+  //display movements
+  displayMovements(currAcc.movements);
+  //display balance
+  calcDisplayBalance(currAcc);
+  //display summary
+  calcDisplaySummary(currAcc);
+}
+
 
 // Event handlers
 // default behav of HTML in submit forms is after clicking the button to reload the page. We gotta change it
@@ -131,24 +140,44 @@ let currentAccount;
 btnLogin.addEventListener('click', function (event) {
   event.preventDefault(); // prevent form from submitting
 
-  currentAccount = accounts.find(acc => acc.username === inputLoginUsername.value);
+  currentAccount = accounts.find(acc => acc.username === inputLoginUsername.value);  // another var that points to the same/original object in the memory heap! One of the objects in the account array
   console.log(currentAccount);
 
-  if (currentAccount?.pin === Number(inputLoginPin.value));  //! optional chaining. Checking pin only if the current account exist
-  //display UI and welcome message
-  labelWelcome.textContent = `Welcome back, ${currentAccount.owner.split(' ')[0]}`; // splitting name and surname. From resulting array taking the first el/word in this case
-  containerApp.style.opacity = 100;
-  // clear input fields
-  inputLoginUsername.value = inputLoginPin.value = '';
-  inputLoginPin.blur(); // !! field looses it's focus
+  if (currentAccount?.pin === Number(inputLoginPin.value)) {  //! optional chaining. Checking pin only if the current account exist
+    //display UI and welcome message
+    labelWelcome.textContent = `Welcome back, ${currentAccount.owner.split(' ')[0]}`; // splitting name and surname. From resulting array taking the first el/word in this case
+    containerApp.style.opacity = 100;
+    // clear input fields
+    inputLoginUsername.value = inputLoginPin.value = '';
+    inputLoginPin.blur(); // !! field looses it's focus
 
-  //display movements
-  displayMovements(currentAccount.movements);
-  //display balance
-  calcDisplayBalance(currentAccount.movements);
-  //display summary
-  calcDisplaySummary(currentAccount);
+    updateUI(currentAccount);
+  }
 });
+
+
+btnTransfer.addEventListener('click', function (e) {
+  e.preventDefault();
+  const amount = Number(inputTransferAmount.value);
+  const receiverAcc = accounts.find(acc => acc.username === inputTransferTo.value); // looking for an account in accounts array that has the credentials corresponding to once that we have entered
+
+  inputTransferAmount.value = inputTransferTo.value = '';
+  // check if amount is positive and if the amount is not bigger than balance of the acc itself
+  if (amount > 0 && receiverAcc && currentAccount.balance >= amount && receiverAcc?.username !== currentAccount.username) {
+    //doing transfer
+    currentAccount.movements.push(-amount);
+    receiverAcc.movements.push(amount);
+
+    updateUI(currentAccount);
+  };
+
+})
+
+
+
+
+// const account = accounts.find(acc => acc.username === 'Jessica Davis'); // among accounts find one with owner 'Jessica Davis'. Owner names must be unique to make it work
+// console.log(account);
 
 
 
@@ -194,4 +223,4 @@ const currencies = new Map([
 
 const movements = [200, 450, -400, 3000, -650, -130, 70, 1300];
 
-/////////////////////////////////////////////////
+///////////////////
