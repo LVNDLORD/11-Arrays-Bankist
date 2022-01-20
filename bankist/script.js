@@ -138,7 +138,7 @@ const updateUI = function (currAcc) {
 let currentAccount;
 
 btnLogin.addEventListener('click', function (event) {
-  event.preventDefault(); // prevent form from submitting
+  event.preventDefault(); // prevent form from submitting the form and refreshing the page
 
   currentAccount = accounts.find(acc => acc.username === inputLoginUsername.value);  // another var that points to the same/original object in the memory heap! One of the objects in the account array
   console.log(currentAccount);
@@ -173,11 +173,23 @@ btnTransfer.addEventListener('click', function (e) {
 
 })
 
+btnClose.addEventListener('click', function (e) {
+  e.preventDefault();
+  if (inputCloseUsername.value === currentAccount.username && Number(inputClosePin.value) === currentAccount.pin) {
+    const index = accounts.findIndex(acc => acc.username === currentAccount.username);
+    console.log(index);
+    // DEL account
+    accounts.splice(index, 1);
+
+    //hide UI
+    containerApp.style.opacity = 0;
+  }
+  inputCloseUsername.value = inputClosePin.value = '';
+  labelWelcome.textContent = "Log in to get started";
+})
 
 
 
-// const account = accounts.find(acc => acc.username === 'Jessica Davis'); // among accounts find one with owner 'Jessica Davis'. Owner names must be unique to make it work
-// console.log(account);
 
 
 
