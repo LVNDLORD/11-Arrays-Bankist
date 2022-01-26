@@ -7,9 +7,21 @@
 // Data
 const account1 = {
   owner: 'Jonas Schmedtmann',
-  movements: [200, 450, -400, 3000, -650, -130, 70, 1300],
+  movements: [200, 455.23, -306.5, 25000, -642.21, -133.9, 79.97, 1300],
   interestRate: 1.2, // %
   pin: 1111,
+  movementsDates: [
+    '2019-11-18T21:31:17.178Z',
+    '2019-12-23T07:42:02.383Z',
+    '2020-01-28T09:15:04.904Z',
+    '2020-04-01T10:17:24.185Z',
+    '2020-05-08T14:11:59.604Z',
+    '2020-05-27T17:01:17.194Z',
+    '2020-07-11T23:36:17.929Z',
+    '2020-07-12T10:51:36.790Z',
+  ],
+  currency: 'EUR',
+  locale: 'pt-PT', // de-DE
 };
 
 const account2 = {
@@ -17,6 +29,18 @@ const account2 = {
   movements: [5000, 3400, -150, -790, -3210, -1000, 8500, -30],
   interestRate: 1.5,
   pin: 2222,
+  movementsDates: [
+    '2019-11-01T13:15:33.035Z',
+    '2019-11-30T09:48:16.867Z',
+    '2019-12-25T06:04:23.907Z',
+    '2020-01-25T14:18:46.235Z',
+    '2020-02-05T16:33:06.386Z',
+    '2020-04-10T14:43:26.374Z',
+    '2020-06-25T18:49:59.371Z',
+    '2020-07-26T12:01:20.894Z',
+  ],
+  currency: 'USD',
+  locale: 'en-US',
 };
 
 const account3 = {
@@ -72,7 +96,7 @@ const displayMovements = function (movements, sort = false) { // better practice
     const html = `
         <div class="movements__row">
           <div class="movements__type movements__type--${type}">${i + 1} ${type}</div>
-          <div class="movements__value">${mov}€</div>
+          <div class="movements__value">${mov.toFixed(2)}€</div>
         </div>
   `;
 
@@ -81,34 +105,31 @@ const displayMovements = function (movements, sort = false) { // better practice
     // 2nd arg - string containing html we wanna insert
     // beforeend - the order of elements will be inverted. Each new element would be added after the previous one. At the end of the container
   });
-
 };
-
 
 // calculating balance per account
 const calcDisplayBalance = function (acc) {
   acc.balance = acc.movements.reduce((acc, mov) => acc + mov, 0);
-  labelBalance.textContent = `${acc.balance} EUR`;
+  labelBalance.textContent = `${acc.balance.toFixed(2)} EUR`;
 };
 
 // calculating total incomes, withdraws and interest from the account
 const calcDisplaySummary = function (acc) {
   const incomes = acc.movements.filter(mov => mov > 0)
     .reduce((acc, mov) => acc + mov, 0);
-  labelSumIn.textContent = `${incomes}€`
+  labelSumIn.textContent = `${incomes.toFixed(2)}€`
 
   const out = acc.movements.filter(mov => mov < 0)
     .reduce((acc, mov) => acc + mov, 0);
-  labelSumOut.textContent = `${Math.abs(out)}€`
+  labelSumOut.textContent = `${Math.abs(out).toFixed(2)}€`
 
   const interest = acc.movements.filter(mov => mov > 0)
     .map(deposit => deposit * acc.interestRate / 100) // deposit * 1,2% (bank pays 1.2% of the value of each transaction)
     .filter((int, i, arr) => { // filtering out transaction from which the interest will be less than 1€ (e.g. new rule from the bank)
-      console.log(arr);
       return int >= 1;
     })
     .reduce((acc, int) => acc + int); // total interest value for all transactions
-  labelSumInterest.textContent = `${interest}€`
+  labelSumInterest.textContent = `${interest.toFixed(2)}€`
 };
 // best practice - not to overuse chaining. Can cause issues with huge arrays.
 // bad practice to chain methods that mutate the original array. Eg.splice() / reverse. Avoid mutating arrays.
@@ -133,7 +154,6 @@ const updateUI = function (currAcc) {
   //display summary
   calcDisplaySummary(currAcc);
 }
-
 
 // Event handlers
 // default behav of HTML in submit forms is after clicking the button to reload the page. We gotta change it
@@ -179,7 +199,7 @@ btnTransfer.addEventListener('click', function (e) {
 btnLoan.addEventListener('click', function (e) {
   e.preventDefault();
 
-  const amount = Number(inputLoanAmount.value);
+  const amount = Math.floor(inputLoanAmount.value);
 
   if (amount > 0 && currentAccount.movements.some(mov => mov >= amount / 10)) {
     // add a movement
@@ -197,6 +217,7 @@ btnClose.addEventListener('click', function (e) {
   if (inputCloseUsername.value === currentAccount.username && Number(inputClosePin.value) === currentAccount.pin) {
     const index = accounts.findIndex(acc => acc.username === currentAccount.username);
     console.log(index);
+
     // DEL account
     accounts.splice(index, 1);
 
@@ -214,6 +235,21 @@ btnSort.addEventListener('click', function (e) {
   displayMovements(currentAccount.movements, !sorted); // sorted-true/false is second "sort parameter"
   sorted = !sorted; // allows to toggle boolean value
 });
+
+labelBalance.addEventListener('click', function () {
+  const movementsUI = Array.from(document.querySelectorAll('.movements__value'), el => Number(el.textContent.replace('€', ''))); //8) [div.movements__value, ..., div.movements__value]
+  //placing the callback f as a second argument in Array.from
+  console.log(movementsUI);   //[1300, 70, -130, -650, 3000, -400, 450, 200]
+  //works cause we use array.from as movementsUI. And it's a real array already. But if we used simply doc.querySelectorAll... directly, map method wouldnt work on NodeList
+
+  const movementsUI2 = [...document.querySelectorAll('.movements__value')]
+});
+
+// we used Array.from to create an array from the result of querySelectorAll, which is a nodelist, but not really an array, but an arraylike structure which can easily be convirted to an array using array.from
+// as a second step we included mapping function which then transfroms that initial array to an array exactly as we want it. Converting raw el to it's text content and replacing € sign with nothing.
+// in the end we end up with the array of numbers
+
+
 
 
 
