@@ -85,20 +85,26 @@ const inputLoanAmount = document.querySelector('.form__input--loan-amount');
 const inputCloseUsername = document.querySelector('.form__input--user');
 const inputClosePin = document.querySelector('.form__input--pin');
 
-const displayMovements = function (movements, sort = false) { // better practice to pass data into a function, rather that make func work with global var
+const displayMovements = function (acc, sort = false) { // better practice to pass data into a function, rather that make func work with global var
   containerMovements.innerHTML = ''; // replacing existing html to nothing. Removing prewritten html code
 
-  const movs = sort ? movements.slice().sort((a, b) => a - b) : movements; // to sort the copy of the array, without mutating the original one. a-b because we display values from the bottom up 'afterbegin'
+  const movs = sort ? acc.movements.slice().sort((a, b) => a - b) : acc.movements; // to sort the copy of the array, without mutating the original one. a-b because we display values from the bottom up 'afterbegin'
 
   movs.forEach(function (mov, i) {  // using movs instead of movements now it supports sorting option by adding a second paramether in displayMovements
     const type = mov > 0 ? 'deposit' : 'withdrawal';
 
+    const date = new Date(acc.movementsDates[i]);
+    const day = `${date.getDate()}`.padStart(2, 0);
+    const month = `${date.getMonth() + 1}`.padStart(2, 0);
+    const year = date.getFullYear();
+    const displayDate = `${day}/${month}/${year}`;
+
     const html = `
         <div class="movements__row">
           <div class="movements__type movements__type--${type}">${i + 1} ${type}</div>
+          <div class="movements__date">${displayDate}</div>
           <div class="movements__value">${mov.toFixed(2)}€</div>
-        </div>
-  `;
+        </div>`;
 
     containerMovements.insertAdjacentHTML('afterbegin', html);  //method to add html template to the webpage container div.movements
     // 2 args as strings. 1st - position in which we wanna attach html https://developer.mozilla.org/en-US/docs/Web/API/Element/insertAdjacentHTML
@@ -148,7 +154,7 @@ createUsernames(accounts);
 
 const updateUI = function (currAcc) {
   //display movements
-  displayMovements(currAcc.movements);
+  displayMovements(currAcc);
   //display balance
   calcDisplayBalance(currAcc);
   //display summary
@@ -158,21 +164,6 @@ const updateUI = function (currAcc) {
 // Event handlers
 // default behav of HTML in submit forms is after clicking the button to reload the page. We gotta change it
 let currentAccount;
-
-//FAKE ALWAYS LOGGED IN
-currentAccount = account1;
-updateUI(currentAccount);
-containerApp.style.opacity = 100;
-
-const now = new Date();
-const day = `${now.getDate()}`.padStart(2, 0);
-const month = `${now.getMonth() + 1}`.padStart(2, 0);
-const year = now.getFullYear();
-const hour = now.getHours();
-const minutes = now.getMinutes();
-labelDate.textContent = `${day}/${month}/${year}, ${hour}:${minutes}`;
-
-
 
 btnLogin.addEventListener('click', function (event) {
   event.preventDefault(); // prevent form from submitting the form and refreshing the page
@@ -184,6 +175,17 @@ btnLogin.addEventListener('click', function (event) {
     //display UI and welcome message
     labelWelcome.textContent = `Welcome back, ${currentAccount.owner.split(' ')[0]}`; // splitting name and surname. From resulting array taking the first el/word in this case
     containerApp.style.opacity = 100;
+
+    // Create current date & time 
+    const now = new Date();
+    const day = `${now.getDate()}`.padStart(2, 0);
+    const month = `${now.getMonth() + 1}`.padStart(2, 0);
+    const year = now.getFullYear();
+    const hour = `${now.getHours()}`.padStart(2, 0);
+    const minutes = `${now.getMinutes()}`.padStart(2, 0);
+    labelDate.textContent = `${day}/${month}/${year}, ${hour}:${minutes}`;
+
+
     // clear input fields
     inputLoginUsername.value = inputLoginPin.value = '';
     inputLoginPin.blur(); // !! field looses it's focus
@@ -191,7 +193,6 @@ btnLogin.addEventListener('click', function (event) {
     updateUI(currentAccount);
   }
 });
-
 
 btnTransfer.addEventListener('click', function (e) {
   e.preventDefault();
@@ -204,6 +205,10 @@ btnTransfer.addEventListener('click', function (e) {
     //doing transfer
     currentAccount.movements.push(-amount);
     receiverAcc.movements.push(amount);
+
+    //add transfer date
+    currentAccount.movementsDates.push(new Date().toISOString());
+    receiverAcc.movementsDates.push(new Date().toISOString());
 
     updateUI(currentAccount);
   };
@@ -219,6 +224,9 @@ btnLoan.addEventListener('click', function (e) {
   if (amount > 0 && currentAccount.movements.some(mov => mov >= amount / 10)) {
     // add a movement
     currentAccount.movements.push(amount);
+
+    //add loan date
+    currentAccount.movementsDates.push(new Date().toISOString());
 
     //update UI
     updateUI(currentAccount);
@@ -264,15 +272,6 @@ labelBalance.addEventListener('click', function () {
 // as a second step we included mapping function which then transfroms that initial array to an array exactly as we want it. Converting raw el to it's text content and replacing € sign with nothing.
 // in the end we end up with the array of numbers
 
-
-// //// EXAMPLE - returning node list. Using spread create new array
-
-// labelBalance.addEventListener('click', function () {
-//   [...document.querySelectorAll('.movements__row')].forEach(function (row, i) {
-//     if (i % 2 === 0) row.style.backgroundColor = 'orangered';
-//     if (i % 3 === 0) row.style.backgroundColor = 'blue';
-//   })
-// });
 
 
 
