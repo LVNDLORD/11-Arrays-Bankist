@@ -159,6 +159,21 @@ const updateUI = function (currAcc) {
 // default behav of HTML in submit forms is after clicking the button to reload the page. We gotta change it
 let currentAccount;
 
+//FAKE ALWAYS LOGGED IN
+currentAccount = account1;
+updateUI(currentAccount);
+containerApp.style.opacity = 100;
+
+const now = new Date();
+const day = `${now.getDate()}`.padStart(2, 0);
+const month = `${now.getMonth() + 1}`.padStart(2, 0);
+const year = now.getFullYear();
+const hour = now.getHours();
+const minutes = now.getMinutes();
+labelDate.textContent = `${day}/${month}/${year}, ${hour}:${minutes}`;
+
+
+
 btnLogin.addEventListener('click', function (event) {
   event.preventDefault(); // prevent form from submitting the form and refreshing the page
 
@@ -249,6 +264,15 @@ labelBalance.addEventListener('click', function () {
 // as a second step we included mapping function which then transfroms that initial array to an array exactly as we want it. Converting raw el to it's text content and replacing € sign with nothing.
 // in the end we end up with the array of numbers
 
+
+// //// EXAMPLE - returning node list. Using spread create new array
+
+// labelBalance.addEventListener('click', function () {
+//   [...document.querySelectorAll('.movements__row')].forEach(function (row, i) {
+//     if (i % 2 === 0) row.style.backgroundColor = 'orangered';
+//     if (i % 3 === 0) row.style.backgroundColor = 'blue';
+//   })
+// });
 
 
 
