@@ -105,9 +105,16 @@ const formatMovementDate = function (date, locale) {
   // const month = `${date.getMonth() + 1}`.padStart(2, 0);
   // const year = date.getFullYear();
   // return `${day}/${month}/${year}`;
-return new Intl.DateTimeFormat(locale).format(date);
+  return new Intl.DateTimeFormat(locale).format(date);
 
 };
+
+const formatCur = function (value, locale, currency) {
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency: currency
+  }).format(value);
+}
 
 const displayMovements = function (acc, sort = false) { // better practice to pass data into a function, rather that make func work with global var
   containerMovements.innerHTML = ''; // replacing existing html to nothing. Removing prewritten html code
@@ -120,11 +127,13 @@ const displayMovements = function (acc, sort = false) { // better practice to pa
     const date = new Date(acc.movementsDates[i]);
     const displayDate = formatMovementDate(date, acc.locale);
 
+    const formattedMov = formatCur(mov, acc.locale, acc.currency);
+
     const html = `
         <div class="movements__row">
           <div class="movements__type movements__type--${type}">${i + 1} ${type}</div>
           <div class="movements__date">${displayDate}</div>
-          <div class="movements__value">${mov.toFixed(2)}€</div>
+          <div class="movements__value">${formattedMov}</div>
         </div>`;
 
     containerMovements.insertAdjacentHTML('afterbegin', html);  //method to add html template to the webpage container div.movements
@@ -137,18 +146,18 @@ const displayMovements = function (acc, sort = false) { // better practice to pa
 // calculating balance per account
 const calcDisplayBalance = function (acc) {
   acc.balance = acc.movements.reduce((acc, mov) => acc + mov, 0);
-  labelBalance.textContent = `${acc.balance.toFixed(2)} €`;
+  labelBalance.textContent = formatCur(acc.balance, acc.locale, acc.currency);
 };
 
 // calculating total incomes, withdraws and interest from the account
 const calcDisplaySummary = function (acc) {
   const incomes = acc.movements.filter(mov => mov > 0)
     .reduce((acc, mov) => acc + mov, 0);
-  labelSumIn.textContent = `${incomes.toFixed(2)}€`
+  labelSumIn.textContent = formatCur(incomes, acc.locale, acc.currency);
 
   const out = acc.movements.filter(mov => mov < 0)
     .reduce((acc, mov) => acc + mov, 0);
-  labelSumOut.textContent = `${Math.abs(out).toFixed(2)}€`
+  labelSumOut.textContent = formatCur(Math.abs(out), acc.locale, acc.currency); 
 
   const interest = acc.movements.filter(mov => mov > 0)
     .map(deposit => deposit * acc.interestRate / 100) // deposit * 1,2% (bank pays 1.2% of the value of each transaction)
@@ -156,7 +165,7 @@ const calcDisplaySummary = function (acc) {
       return int >= 1;
     })
     .reduce((acc, int) => acc + int); // total interest value for all transactions
-  labelSumInterest.textContent = `${interest.toFixed(2)}€`
+  labelSumInterest.textContent = formatCur(interest, acc.locale, acc.currency); 
 };
 // best practice - not to overuse chaining. Can cause issues with huge arrays.
 // bad practice to chain methods that mutate the original array. Eg.splice() / reverse. Avoid mutating arrays.
@@ -182,6 +191,20 @@ const updateUI = function (currAcc) {
   calcDisplaySummary(currAcc);
 }
 
+// Start logout timer
+const startLogOutTimer = function () {
+  // set time for 5 minutes
+  let time = 100;
+  // Call the timer every second
+  setInterval(function () {
+    //In each call, print the remaining time to UI
+    labelTimer.textContent = time;
+    //decrease 1 sec
+    time--;
+    // when 0, stop timer and log user out
+  }, 1000);
+
+}
 
 // Event handlers
 // default behav of HTML in submit forms is after clicking the button to reload the page. We gotta change it
