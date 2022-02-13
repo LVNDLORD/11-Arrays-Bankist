@@ -3,10 +3,13 @@
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 // BANKIST APP
+// https://www.udemy.com/course/the-complete-javascript-course/learn/lecture/22648897#questions/16746000
+//Sort dates together with movements
+
 
 // Data
 const account1 = {
-  owner: 'Jonas Schmedtmann',
+  owner: 'Jesse Pinkman',
   movements: [200, 455.23, -306.5, 25000, -642.21, -133.9, 79.97, 1300],
   interestRate: 1.2, // %
   pin: 1111,
@@ -25,8 +28,8 @@ const account1 = {
 };
 
 const account2 = {
-  owner: 'Jessica Davis',
-  movements: [5000, 3400, -150, -790, -3210, -1000, 8500, -30],
+  owner: 'Walter White',
+  movements: [5000, 3400, -150, -790, -3210, -1000, 8500, -30, 540, 345],
   interestRate: 1.5,
   pin: 2222,
   movementsDates: [
@@ -38,6 +41,8 @@ const account2 = {
     '2020-04-10T14:43:26.374Z',
     '2020-06-25T18:49:59.371Z',
     '2020-07-26T12:01:20.894Z',
+    '2022-02-09T13:01:20.894Z',
+    '2022-02-12T13:01:20.894Z',
   ],
   currency: 'USD',
   locale: 'en-US',
@@ -85,6 +90,24 @@ const inputLoanAmount = document.querySelector('.form__input--loan-amount');
 const inputCloseUsername = document.querySelector('.form__input--user');
 const inputClosePin = document.querySelector('.form__input--pin');
 
+const formatMovementDate = function (date) {
+  const calcDaysPassed = (date1, date2) =>
+    Math.round(Math.abs(date2 - date1) / (1000 * 60 * 60 * 24));
+
+  const daysPassed = calcDaysPassed(new Date(), date);
+  console.log(daysPassed);
+
+  if (daysPassed === 0) return 'Today';
+  if (daysPassed === 1) return 'Yesterday';
+  if (daysPassed <= 7) return `${daysPassed} days ago`;
+
+  const day = `${date.getDate()}`.padStart(2, 0);
+  const month = `${date.getMonth() + 1}`.padStart(2, 0);
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+
+};
+
 const displayMovements = function (acc, sort = false) { // better practice to pass data into a function, rather that make func work with global var
   containerMovements.innerHTML = ''; // replacing existing html to nothing. Removing prewritten html code
 
@@ -94,10 +117,7 @@ const displayMovements = function (acc, sort = false) { // better practice to pa
     const type = mov > 0 ? 'deposit' : 'withdrawal';
 
     const date = new Date(acc.movementsDates[i]);
-    const day = `${date.getDate()}`.padStart(2, 0);
-    const month = `${date.getMonth() + 1}`.padStart(2, 0);
-    const year = date.getFullYear();
-    const displayDate = `${day}/${month}/${year}`;
+    const displayDate = formatMovementDate(date);
 
     const html = `
         <div class="movements__row">
@@ -116,7 +136,7 @@ const displayMovements = function (acc, sort = false) { // better practice to pa
 // calculating balance per account
 const calcDisplayBalance = function (acc) {
   acc.balance = acc.movements.reduce((acc, mov) => acc + mov, 0);
-  labelBalance.textContent = `${acc.balance.toFixed(2)} EUR`;
+  labelBalance.textContent = `${acc.balance.toFixed(2)} €`;
 };
 
 // calculating total incomes, withdraws and interest from the account
@@ -160,6 +180,8 @@ const updateUI = function (currAcc) {
   //display summary
   calcDisplaySummary(currAcc);
 }
+
+
 
 // Event handlers
 // default behav of HTML in submit forms is after clicking the button to reload the page. We gotta change it
@@ -229,6 +251,7 @@ btnLoan.addEventListener('click', function (e) {
       //add loan date
       currentAccount.movementsDates.push(new Date().toISOString());
 
+      startLogOutTimer();
       //update UI
       updateUI(currentAccount);
     }, 2000);
@@ -257,7 +280,7 @@ btnClose.addEventListener('click', function (e) {
 let sorted = false;
 btnSort.addEventListener('click', function (e) {
   e.preventDefault();
-  displayMovements(currentAccount.movements, !sorted); // sorted-true/false is second "sort parameter"
+  displayMovements(currentAccount, !sorted); // sorted-true/false is second "sort parameter"
   sorted = !sorted; // allows to toggle boolean value
 });
 
