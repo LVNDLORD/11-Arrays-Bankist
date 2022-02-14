@@ -90,6 +90,9 @@ const inputLoanAmount = document.querySelector('.form__input--loan-amount');
 const inputCloseUsername = document.querySelector('.form__input--user');
 const inputClosePin = document.querySelector('.form__input--pin');
 
+
+const logOut = () => containerApp.style.opacity = 0;
+
 const formatMovementDate = function (date, locale) {
   const calcDaysPassed = (date1, date2) =>
     Math.round(Math.abs(date2 - date1) / (1000 * 60 * 60 * 24));
@@ -157,7 +160,7 @@ const calcDisplaySummary = function (acc) {
 
   const out = acc.movements.filter(mov => mov < 0)
     .reduce((acc, mov) => acc + mov, 0);
-  labelSumOut.textContent = formatCur(Math.abs(out), acc.locale, acc.currency); 
+  labelSumOut.textContent = formatCur(Math.abs(out), acc.locale, acc.currency);
 
   const interest = acc.movements.filter(mov => mov > 0)
     .map(deposit => deposit * acc.interestRate / 100) // deposit * 1,2% (bank pays 1.2% of the value of each transaction)
@@ -165,7 +168,7 @@ const calcDisplaySummary = function (acc) {
       return int >= 1;
     })
     .reduce((acc, int) => acc + int); // total interest value for all transactions
-  labelSumInterest.textContent = formatCur(interest, acc.locale, acc.currency); 
+  labelSumInterest.textContent = formatCur(interest, acc.locale, acc.currency);
 };
 // best practice - not to overuse chaining. Can cause issues with huge arrays.
 // bad practice to chain methods that mutate the original array. Eg.splice() / reverse. Avoid mutating arrays.
@@ -191,24 +194,35 @@ const updateUI = function (currAcc) {
   calcDisplaySummary(currAcc);
 }
 
+
 // Start logout timer
 const startLogOutTimer = function () {
-  // set time for 5 minutes
-  let time = 100;
-  // Call the timer every second
-  setInterval(function () {
+  const tick = function () {
+    const min = String(Math.trunc(time / 60)).padStart(2, 0);
+    const sec = String(time % 60).padStart(2, 0);
     //In each call, print the remaining time to UI
-    labelTimer.textContent = time;
+    labelTimer.textContent = `${min}:${sec}`;
+    // when 0, stop timer and log user out
+    if (time === 0) {
+      clearInterval(timer);
+      logOut();
+      labelWelcome.textContent = "Log in to get started";
+    }
     //decrease 1 sec
     time--;
-    // when 0, stop timer and log user out
-  }, 1000);
-
-}
+  };
+  // set time for 5 minutes
+  let time = 300;
+  // Call the timer every second
+  tick();
+  timer = setInterval(tick, 1000);
+  return timer; // to clear the timer(use clearInterval) we need to return the timer
+};
 
 // Event handlers
 // default behav of HTML in submit forms is after clicking the button to reload the page. We gotta change it
-let currentAccount;
+let currentAccount, timer; // to clear the timer(use clearInterval) we need the timer var. Need timer var to persist between different logins. Otherwise after "btn.Login" function is ready,
+// the timer var will disappear
 
 
 
@@ -251,6 +265,10 @@ btnLogin.addEventListener('click', function (event) {
     inputLoginUsername.value = inputLoginPin.value = '';
     inputLoginPin.blur(); // !! field looses it's focus
 
+    //Timer
+    if (timer) clearInterval(timer); // if timer from another active acc running. Stop it. And start with a new acc.
+    timer = startLogOutTimer();
+
     updateUI(currentAccount);
   }
 });
@@ -272,6 +290,10 @@ btnTransfer.addEventListener('click', function (e) {
     receiverAcc.movementsDates.push(new Date().toISOString());
 
     updateUI(currentAccount);
+
+    //Reset the timer
+    clearInterval(timer);
+    timer = startLogOutTimer();
   };
 })
 
@@ -290,9 +312,12 @@ btnLoan.addEventListener('click', function (e) {
       //add loan date
       currentAccount.movementsDates.push(new Date().toISOString());
 
-      startLogOutTimer();
       //update UI
       updateUI(currentAccount);
+
+      //Reset the timer
+      clearInterval(timer);
+      timer = startLogOutTimer();
     }, 2000);
   }
   inputLoanAmount.value = '';
@@ -309,7 +334,7 @@ btnClose.addEventListener('click', function (e) {
     accounts.splice(index, 1);
 
     //hide UI
-    containerApp.style.opacity = 0;
+    logOut();
   }
   inputCloseUsername.value = inputClosePin.value = '';
   labelWelcome.textContent = "Log in to get started";
