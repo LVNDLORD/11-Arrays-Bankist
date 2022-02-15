@@ -1,13 +1,5 @@
 'use strict';
 
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-// BANKIST APP
-// https://www.udemy.com/course/the-complete-javascript-course/learn/lecture/22648897#questions/16746000
-//Sort dates together with movements
-
-
-// Data
 const account1 = {
   owner: 'Jesse Pinkman',
   movements: [200, 455.23, -306.5, 25000, -642.21, -133.9, 79.97, 1300],
@@ -24,7 +16,7 @@ const account1 = {
     '2020-07-12T10:51:36.790Z',
   ],
   currency: 'EUR',
-  locale: 'pt-PT', // de-DE
+  locale: 'pt-PT',
 };
 
 const account2 = {
@@ -90,6 +82,12 @@ const inputLoanAmount = document.querySelector('.form__input--loan-amount');
 const inputCloseUsername = document.querySelector('.form__input--user');
 const inputClosePin = document.querySelector('.form__input--pin');
 
+let currentAccount, timer;
+
+const resetTimer = () => {
+  clearInterval(timer);
+  timer = startLogOutTimer();
+}
 
 const logOut = () => containerApp.style.opacity = 0;
 
@@ -98,18 +96,12 @@ const formatMovementDate = function (date, locale) {
     Math.round(Math.abs(date2 - date1) / (1000 * 60 * 60 * 24));
 
   const daysPassed = calcDaysPassed(new Date(), date);
-  console.log(daysPassed);
 
   if (daysPassed === 0) return 'Today';
   if (daysPassed === 1) return 'Yesterday';
   if (daysPassed <= 7) return `${daysPassed} days ago`;
 
-  // const day = `${date.getDate()}`.padStart(2, 0);
-  // const month = `${date.getMonth() + 1}`.padStart(2, 0);
-  // const year = date.getFullYear();
-  // return `${day}/${month}/${year}`;
   return new Intl.DateTimeFormat(locale).format(date);
-
 };
 
 const formatCur = function (value, locale, currency) {
@@ -119,12 +111,12 @@ const formatCur = function (value, locale, currency) {
   }).format(value);
 }
 
-const displayMovements = function (acc, sort = false) { // better practice to pass data into a function, rather that make func work with global var
-  containerMovements.innerHTML = ''; // replacing existing html to nothing. Removing prewritten html code
+const displayMovements = function (acc, sort = false) {
+  containerMovements.innerHTML = '';
 
-  const movs = sort ? acc.movements.slice().sort((a, b) => a - b) : acc.movements; // to sort the copy of the array, without mutating the original one. a-b because we display values from the bottom up 'afterbegin'
+  const movs = sort ? acc.movements.slice().sort((a, b) => a - b) : acc.movements;
 
-  movs.forEach(function (mov, i) {  // using movs instead of movements now it supports sorting option by adding a second paramether in displayMovements
+  movs.forEach(function (mov, i) {
     const type = mov > 0 ? 'deposit' : 'withdrawal';
 
     const date = new Date(acc.movementsDates[i]);
@@ -139,10 +131,7 @@ const displayMovements = function (acc, sort = false) { // better practice to pa
           <div class="movements__value">${formattedMov}</div>
         </div>`;
 
-    containerMovements.insertAdjacentHTML('afterbegin', html);  //method to add html template to the webpage container div.movements
-    // 2 args as strings. 1st - position in which we wanna attach html https://developer.mozilla.org/en-US/docs/Web/API/Element/insertAdjacentHTML
-    // 2nd arg - string containing html we wanna insert
-    // beforeend - the order of elements will be inverted. Each new element would be added after the previous one. At the end of the container
+    containerMovements.insertAdjacentHTML('afterbegin', html);
   });
 };
 
@@ -170,8 +159,6 @@ const calcDisplaySummary = function (acc) {
     .reduce((acc, int) => acc + int); // total interest value for all transactions
   labelSumInterest.textContent = formatCur(interest, acc.locale, acc.currency);
 };
-// best practice - not to overuse chaining. Can cause issues with huge arrays.
-// bad practice to chain methods that mutate the original array. Eg.splice() / reverse. Avoid mutating arrays.
 
 //creating username property inside each object
 const createUsernames = function (accs) {
@@ -179,66 +166,51 @@ const createUsernames = function (accs) {
     acc.username = acc.owner
       .toLocaleLowerCase()
       .split(' ')
-      .map(name => name.at(0)) //callback f in map method always need a return value that will be in a new array
+      .map(name => name.at(0))
       .join('');
   })
 };
 createUsernames(accounts);
 
 const updateUI = function (currAcc) {
-  //display movements
   displayMovements(currAcc);
-  //display balance
   calcDisplayBalance(currAcc);
-  //display summary
   calcDisplaySummary(currAcc);
 }
 
-
-// Start logout timer
+// Start Log Out timer
 const startLogOutTimer = function () {
   const tick = function () {
     const min = String(Math.trunc(time / 60)).padStart(2, 0);
     const sec = String(time % 60).padStart(2, 0);
-    //In each call, print the remaining time to UI
+
     labelTimer.textContent = `${min}:${sec}`;
-    // when 0, stop timer and log user out
     if (time === 0) {
       clearInterval(timer);
       logOut();
       labelWelcome.textContent = "Log in to get started";
     }
-    //decrease 1 sec
     time--;
   };
-  // set time for 5 minutes
   let time = 300;
-  // Call the timer every second
+
   tick();
   timer = setInterval(tick, 1000);
-  return timer; // to clear the timer(use clearInterval) we need to return the timer
+  return timer;
 };
-
-// Event handlers
-// default behav of HTML in submit forms is after clicking the button to reload the page. We gotta change it
-let currentAccount, timer; // to clear the timer(use clearInterval) we need the timer var. Need timer var to persist between different logins. Otherwise after "btn.Login" function is ready,
-// the timer var will disappear
-
 
 
 btnLogin.addEventListener('click', function (event) {
-  event.preventDefault(); // prevent form from submitting the form and refreshing the page
+  event.preventDefault();
 
-  currentAccount = accounts.find(acc => acc.username === inputLoginUsername.value);  // another var that points to the same/original object in the memory heap! One of the objects in the account array
-  console.log(currentAccount);
+  currentAccount = accounts.find(acc => acc.username === inputLoginUsername.value);
 
-  if (currentAccount?.pin === Number(inputLoginPin.value)) {  //! optional chaining. Checking pin only if the current account exist
+  if (currentAccount?.pin === Number(inputLoginPin.value)) {
     //display UI and welcome message
-    labelWelcome.textContent = `Welcome back, ${currentAccount.owner.split(' ')[0]}`; // splitting name and surname. From resulting array taking the first el/word in this case
+    labelWelcome.textContent = `Welcome back, ${currentAccount.owner.split(' ')[0]}`;
     containerApp.style.opacity = 100;
 
     // Create current date & time 
-    //Experrimenting API
     const now = new Date();
     const options = {
       hour: 'numeric',
@@ -246,40 +218,26 @@ btnLogin.addEventListener('click', function (event) {
       day: 'numeric',
       month: 'numeric',
       year: 'numeric',
-      // weekday: 'long'
     };
-    const locale = navigator.language;
-    console.log(locale);
-
     labelDate.textContent = new Intl.DateTimeFormat(currentAccount.locale, options).format(now);
-    // const now = new Date();
-    // const day = `${now.getDate()}`.padStart(2, 0);
-    // const month = `${now.getMonth() + 1}`.padStart(2, 0);
-    // const year = now.getFullYear();
-    // const hour = `${now.getHours()}`.padStart(2, 0);
-    // const minutes = `${now.getMinutes()}`.padStart(2, 0);
-    // labelDate.textContent = `${day}/${month}/${year}, ${hour}:${minutes}`;
-
 
     // clear input fields
     inputLoginUsername.value = inputLoginPin.value = '';
-    inputLoginPin.blur(); // !! field looses it's focus
+    inputLoginPin.blur();
 
     //Timer
-    if (timer) clearInterval(timer); // if timer from another active acc running. Stop it. And start with a new acc.
-    timer = startLogOutTimer();
-
+    if (timer) resetTimer(); // if timer from another active acc running. Stop it. And start with a new acc.
     updateUI(currentAccount);
   }
 });
 
+
 btnTransfer.addEventListener('click', function (e) {
   e.preventDefault();
   const amount = Number(inputTransferAmount.value);
-  const receiverAcc = accounts.find(acc => acc.username === inputTransferTo.value); // looking for an account in accounts array that has the credentials corresponding to once that we have entered
+  const receiverAcc = accounts.find(acc => acc.username === inputTransferTo.value);
 
   inputTransferAmount.value = inputTransferTo.value = '';
-  // check if amount is positive and if the amount is not bigger than balance of the acc itself
   if (amount > 0 && receiverAcc && currentAccount.balance >= amount && receiverAcc?.username !== currentAccount.username) {
     //doing transfer
     currentAccount.movements.push(-amount);
@@ -288,51 +246,36 @@ btnTransfer.addEventListener('click', function (e) {
     //add transfer date
     currentAccount.movementsDates.push(new Date().toISOString());
     receiverAcc.movementsDates.push(new Date().toISOString());
-
     updateUI(currentAccount);
-
-    //Reset the timer
-    clearInterval(timer);
-    timer = startLogOutTimer();
+    resetTimer();
   };
 })
 
-// request a loan
-// loan is granted if there is at least 1 deposit with at least 10% of the requested loan amount
+// request a loan. Loan is granted if there is at least 1 deposit with at least 10% of the requested loan amount
 btnLoan.addEventListener('click', function (e) {
   e.preventDefault();
 
   const amount = Math.floor(inputLoanAmount.value);
-
   if (amount > 0 && currentAccount.movements.some(mov => mov >= amount / 10)) {
-    // add a movement
+    // delay simulating bank analyzing if loan is approved
     setTimeout(function () {
       currentAccount.movements.push(amount);
-
       //add loan date
       currentAccount.movementsDates.push(new Date().toISOString());
-
-      //update UI
       updateUI(currentAccount);
-
-      //Reset the timer
-      clearInterval(timer);
-      timer = startLogOutTimer();
+      resetTimer();
     }, 2000);
   }
   inputLoanAmount.value = '';
 });
 
-
+// Delete account
 btnClose.addEventListener('click', function (e) {
   e.preventDefault();
   if (inputCloseUsername.value === currentAccount.username && Number(inputClosePin.value) === currentAccount.pin) {
     const index = accounts.findIndex(acc => acc.username === currentAccount.username);
-    console.log(index);
-
     // DEL account
     accounts.splice(index, 1);
-
     //hide UI
     logOut();
   }
@@ -345,69 +288,10 @@ let sorted = false;
 btnSort.addEventListener('click', function (e) {
   e.preventDefault();
   displayMovements(currentAccount, !sorted); // sorted-true/false is second "sort parameter"
-  sorted = !sorted; // allows to toggle boolean value
+  sorted = !sorted; // toggle boolean value
 });
 
 labelBalance.addEventListener('click', function () {
-  const movementsUI = Array.from(document.querySelectorAll('.movements__value'), el => Number(el.textContent.replace('€', ''))); //8) [div.movements__value, ..., div.movements__value]
-  //placing the callback f as a second argument in Array.from
-  console.log(movementsUI);   //[1300, 70, -130, -650, 3000, -400, 450, 200]
-  //works cause we use array.from as movementsUI. And it's a real array already. But if we used simply doc.querySelectorAll... directly, map method wouldnt work on NodeList
-
-  const movementsUI2 = [...document.querySelectorAll('.movements__value')]
+  const movementsUI = Array.from(document.querySelectorAll('.movements__value'), el => Number(el.textContent.replace('€', '')));
+  console.log(movementsUI);
 });
-
-// we used Array.from to create an array from the result of querySelectorAll, which is a nodelist, but not really an array, but an arraylike structure which can easily be convirted to an array using array.from
-// as a second step we included mapping function which then transfroms that initial array to an array exactly as we want it. Converting raw el to it's text content and replacing € sign with nothing.
-// in the end we end up with the array of numbers
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-// LECTURES
-
-const currencies = new Map([
-  ['USD', 'United States dollar'],
-  ['EUR', 'Euro'],
-  ['GBP', 'Pound sterling'],
-]);
-
-const movements = [200, 450, -400, 3000, -650, -130, 70, 1300];
-
-///////////////////
