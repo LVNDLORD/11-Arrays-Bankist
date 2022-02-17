@@ -40,21 +40,7 @@ const account2 = {
   locale: 'en-US',
 };
 
-const account3 = {
-  owner: 'Steven Thomas Williams',
-  movements: [200, -200, 340, -300, -20, 50, 400, -460],
-  interestRate: 0.7,
-  pin: 3333,
-};
-
-const account4 = {
-  owner: 'Sarah Smith',
-  movements: [430, 1000, 700, 50, 90],
-  interestRate: 1,
-  pin: 4444,
-};
-
-const accounts = [account1, account2, account3, account4];
+const accounts = [account1, account2];
 
 // Elements
 const labelWelcome = document.querySelector('.welcome');
@@ -113,15 +99,11 @@ const formatCur = function (value, locale, currency) {
 
 const displayMovements = function (acc, sort = false) {
   containerMovements.innerHTML = '';
-
-  const movs = sort ? acc.movements.slice().sort((a, b) => a - b) : acc.movements;
+  const [movs, dates] = sort ? sortMovements(acc.movements, acc.movementsDates) : [acc.movements, acc.movementsDates];
 
   movs.forEach(function (mov, i) {
     const type = mov > 0 ? 'deposit' : 'withdrawal';
-
-    const date = new Date(acc.movementsDates[i]);
-    const displayDate = formatMovementDate(date, acc.locale);
-
+    const displayDate = formatMovementDate(new Date(dates[i]));
     const formattedMov = formatCur(mov, acc.locale, acc.currency);
 
     const html = `
@@ -170,6 +152,7 @@ const createUsernames = function (accs) {
       .join('');
   })
 };
+
 createUsernames(accounts);
 
 const updateUI = function (currAcc) {
@@ -192,6 +175,7 @@ const startLogOutTimer = function () {
     }
     time--;
   };
+
   let time = 300;
 
   tick();
@@ -204,7 +188,6 @@ btnLogin.addEventListener('click', function (event) {
   event.preventDefault();
 
   currentAccount = accounts.find(acc => acc.username === inputLoginUsername.value);
-
   if (currentAccount?.pin === Number(inputLoginPin.value)) {
     //display UI and welcome message
     labelWelcome.textContent = `Welcome back, ${currentAccount.owner.split(' ')[0]}`;
@@ -226,7 +209,9 @@ btnLogin.addEventListener('click', function (event) {
     inputLoginPin.blur();
 
     //Timer
-    if (timer) resetTimer(); // if timer from another active acc running. Stop it. And start with a new acc.
+    if (timer) clearInterval(timer);
+    timer = startLogOutTimer(); // if timer from another active acc running. Stop it. And start with a new acc.
+    
     updateUI(currentAccount);
   }
 });
@@ -254,7 +239,6 @@ btnTransfer.addEventListener('click', function (e) {
 // request a loan. Loan is granted if there is at least 1 deposit with at least 10% of the requested loan amount
 btnLoan.addEventListener('click', function (e) {
   e.preventDefault();
-
   const amount = Math.floor(inputLoanAmount.value);
   if (amount > 0 && currentAccount.movements.some(mov => mov >= amount / 10)) {
     // delay simulating bank analyzing if loan is approved
@@ -283,15 +267,22 @@ btnClose.addEventListener('click', function (e) {
   labelWelcome.textContent = "Log in to get started";
 });
 
-//sorting transactions
+//sorting transactions & dates corresponding to them
+const sortMovements = function (movs, dates) {
+  const arrCombined = [], sortedMovs = [], sortedDates = [];
+  movs.forEach((el, i) => arrCombined.push([movs[i], dates[i]]));
+  arrCombined.sort((a, b) => a[0] - b[0]);
+  arrCombined.forEach(el => {
+    sortedMovs.push(el[0]);
+    sortedDates.push(el[1]);
+  });
+
+  return [sortedMovs, sortedDates];
+};
+
 let sorted = false;
 btnSort.addEventListener('click', function (e) {
   e.preventDefault();
   displayMovements(currentAccount, !sorted); // sorted-true/false is second "sort parameter"
-  sorted = !sorted; // toggle boolean value
-});
-
-labelBalance.addEventListener('click', function () {
-  const movementsUI = Array.from(document.querySelectorAll('.movements__value'), el => Number(el.textContent.replace('€', '')));
-  console.log(movementsUI);
+  sorted = !sorted; 
 });
